@@ -8,8 +8,17 @@
 </head>
 <body class="bg-gray-800 text-white font-sans">
   <!-- Nav Bar -->
-  <nav class="bg-gradient-to-r from-indigo-900 to-purple-800 text-white p-6 flex justify-between items-center shadow-lg">
-    <h1 class="text-4xl font-bold tracking-wide">🚗 Fusion Motors</h1>
+  <nav class="bg-gradient-to-r from-indigo-900 to-purple-800 p-6 flex justify-between items-center shadow-lg">
+    <h1 class="text-4xl font-bold tracking-wide text-white">🚗 Fusion Motors</h1>
+    <div class="space-x-6 text-lg" id="nav-links">
+      <a href="index.html" class="text-yellow-300 font-semibold">Home</a>
+      <a href="search.html" class="hover:text-yellow-300 transition">Search</a>
+      <a href="favorites.html" class="hover:text-yellow-300 transition">Favorites</a>
+      <a href="login.html" class="hover:text-yellow-300 transition" id="login-link">Login</a>
+      <button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 text-sm font-semibold hidden">
+        Logout
+      </button>
+    </div>
   </nav>
 
   <!-- Login & Sign Up Section -->
@@ -18,14 +27,13 @@
   
     <!-- LOGIN FORM -->
     <form id="login-form" class="space-y-4">
-      <input type="text" id="login-username" placeholder="Username" 
+      <input type="text" id="login-username" placeholder="Username"
              class="w-full p-3 rounded text-black focus:outline-none" required>
-      <input type="email" id="email" placeholder="Email" 
-             class="w-full p-3 rounded text-black focus:outline-none" hidden>
-      <input type="password" id="password" placeholder="Password" 
+      <input type="email" id="email" hidden>
+      <input type="password" id="password" placeholder="Password"
              class="w-full p-3 rounded text-black focus:outline-none" required>
   
-      <button type="submit" 
+      <button type="submit"
               class="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded font-semibold transition">
         Login
       </button>
@@ -41,124 +49,112 @@
     </form>
 
     <!-- SIGNUP FORM -->
-<form id="signup-form" class="space-y-4 hidden mt-4">
-  <input
-    type="text"
-    id="signup-username"
-    placeholder="Username"
-    class="w-full p-3 rounded text-black focus:outline-none"
-    required
-  >
-  <!-- hidden email field -->
-  <input
-    type="hidden"
-    id="signup-email"
-  >
-  <input
-    type="password"
-    id="signup-password"
-    placeholder="Password"
-    class="w-full p-3 rounded text-black focus:outline-none"
-    required
-  >
-
-  <button
-    type="submit"
-    class="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded font-semibold transition"
-  >
-    Sign Up
-  </button>
-
-  <p id="signup-error" class="text-red-400 text-sm text-center mt-2"></p>
-
-  <p class="text-sm text-gray-400 text-center">
-    Already have an account?
-    <button type="button" id="login-btn" class="text-yellow-300 font-medium ml-1">
-      Login
-    </button>
-  </p>
-</form>
-
-  </main>
+    <form id="signup-form" class="space-y-4 hidden mt-4">
+      <input type="text" id="signup-username" placeholder="Username"
+             class="w-full p-3 rounded text-black focus:outline-none" required>
+      <input type="hidden" id="signup-email">
+      <input type="password" id="signup-password" placeholder="Password"
+             class="w-full p-3 rounded text-black focus:outline-none" required>
   
+      <button type="submit"
+              class="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded font-semibold transition">
+        Sign Up
+      </button>
+  
+      <p id="signup-error" class="text-red-400 text-sm text-center mt-2"></p>
+  
+      <p class="text-sm text-gray-400 text-center">
+        Already have an account?
+        <button type="button" id="login-btn" class="text-yellow-300 font-medium ml-1">
+          Login
+        </button>
+      </p>
+    </form>
+  </main>
 
   <script type="module">
     import { auth, db } from './firebase.js';
-    import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
+    import {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
     import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
-    const loginForm = document.getElementById('login-form');
-    const signupForm = document.getElementById('signup-form');
-    const signupBtn = document.getElementById('sign-up-btn');
-    const loginBtn = document.getElementById('login-btn');
-    const errorMsg = document.getElementById('login-error');
-    const signupErrorMsg = document.getElementById('signup-error');
+    // — NAV: Login/Logout Toggle —
     const loginLink = document.getElementById('login-link');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-    // Toggle between Login and Sign Up forms
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        loginLink.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+      } else {
+        loginLink.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+      }
+    });
+
+    logoutBtn.addEventListener('click', () =>
+      signOut(auth).then(() => window.location.href = 'login.html')
+    );
+
+    // — FORM TOGGLING —
+    const loginForm   = document.getElementById('login-form');
+    const signupForm  = document.getElementById('signup-form');
+    const signupBtn   = document.getElementById('sign-up-btn');
+    const loginBtn    = document.getElementById('login-btn');
+
     signupBtn.addEventListener('click', () => {
       signupForm.classList.remove('hidden');
       loginForm.classList.add('hidden');
     });
-
     loginBtn.addEventListener('click', () => {
       loginForm.classList.remove('hidden');
       signupForm.classList.add('hidden');
     });
 
+    // — AUTO‑GENERATE EMAILS —
+    const usernameInput      = document.getElementById('login-username');
+    const emailInput         = document.getElementById('email');
+    const signupUsernameInput= document.getElementById('signup-username');
+    const signupEmailInput   = document.getElementById('signup-email');
+
+    usernameInput.addEventListener('input', () => {
+      emailInput.value = usernameInput.value + '@example.com';
+    });
+    signupUsernameInput.addEventListener('input', () => {
+      signupEmailInput.value = signupUsernameInput.value + '@example.com';
+    });
+
+    // — LOGIN HANDLER —
+    const errorMsg = document.getElementById('login-error');
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, emailInput.value, document.getElementById('password').value);
         window.location.href = 'index.html';
       } catch (error) {
         errorMsg.textContent = error.message;
       }
     });
 
+    // — SIGNUP HANDLER —
+    const signupErrorMsg = document.getElementById('signup-error');
     signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('signup-email').value;
-      const password = document.getElementById('signup-password').value;
-
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Save user data to Firestore
-        const user = userCredential.user;
-        await setDoc(doc(db, 'users', user.uid), {
-          email: user.email,
-          favorites: [],
+        const cred = await createUserWithEmailAndPassword(auth, signupEmailInput.value, document.getElementById('signup-password').value);
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          email: cred.user.email,
+          favorites: []
         });
         window.location.href = 'index.html';
       } catch (error) {
         signupErrorMsg.textContent = error.message;
       }
     });
-
-    
   </script>
-
-  <script>
-  // LOGIN email generation (already in place)
-  const usernameInput = document.getElementById('login-username');
-  const emailInput   = document.getElementById('email');
-
-  usernameInput.addEventListener('input', () => {
-    emailInput.value = usernameInput.value + '@example.com';
-  });
-
-  // SIGNUP email generation
-  const signupUsernameInput = document.getElementById('signup-username');
-  const signupEmailInput    = document.getElementById('signup-email');
-
-  signupUsernameInput.addEventListener('input', () => {
-    signupEmailInput.value = signupUsernameInput.value + '@example.com';
-  });
-</script>
-
-
 </body>
 </html>

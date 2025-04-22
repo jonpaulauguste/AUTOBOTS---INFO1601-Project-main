@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login / Sign Up | Fusion Motors</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-800 text-white font-sans">
+  <!-- Nav Bar -->
+  <nav class="bg-gradient-to-r from-indigo-900 to-purple-800 text-white p-6 flex justify-between items-center shadow-lg">
+    <h1 class="text-4xl font-bold tracking-wide">🚗 Fusion Motors</h1>
+  </nav>
+
+  <!-- Login & Sign Up Section -->
+  <main class="max-w-md mx-auto mt-16 p-6 bg-gray-900 rounded-lg shadow-xl">
+    <h2 class="text-3xl font-bold text-center text-yellow-300 mb-4">Login to Fusion Motors</h2>
+    <form id="login-form" class="space-y-4">
+      <input type="text" id="login-username" placeholder="Username" class="w-full p-3 rounded text-black focus:outline-none" required>
+      <input type="email" id="email" placeholder="Email" class="w-full p-3 rounded text-black focus:outline-none" hidden>
+      <input type="password" id="password" placeholder="Password" class="w-full p-3 rounded text-black focus:outline-none" required>
+      <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded font-semibold transition">Login</button>
+      <p id="login-error" class="text-red-400 text-sm text-center mt-2"></p>
+    </form>
+
+    <div class="text-center mt-4">
+      <p class="text-sm text-gray-400">Don't have an account?</p>
+      <button id="sign-up-btn" class="text-yellow-300">Sign Up</button>
+    </div>
+
+    <form id="signup-form" class="space-y-4 hidden mt-4">
+      <input type="text" id="signup-username" placeholder="Username" class="w-full p-3 rounded text-black focus:outline-none" required>
+      <input type="email" id="signup-email" placeholder="Email" class="w-full p-3 rounded text-black focus:outline-none" required>
+      <input type="password" id="signup-password" placeholder="Password" class="w-full p-3 rounded text-black focus:outline-none" required>
+      <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded font-semibold transition">Sign Up</button>
+      <p id="signup-error" class="text-red-400 text-sm text-center mt-2"></p>
+    </form>
+
+    <div class="text-center mt-4">
+      <p class="text-sm text-gray-400">Already have an account?</p>
+      <button id="login-btn" class="text-yellow-300">Login</button>
+    </div>
+  </main>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js';
+    import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js';
+
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const signupBtn = document.getElementById('sign-up-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const errorMsg = document.getElementById('login-error');
+    const signupErrorMsg = document.getElementById('signup-error');
+    const loginLink = document.getElementById('login-link');
+
+    // Toggle between Login and Sign Up forms
+    signupBtn.addEventListener('click', () => {
+      signupForm.classList.remove('hidden');
+      loginForm.classList.add('hidden');
+    });
+
+    loginBtn.addEventListener('click', () => {
+      loginForm.classList.remove('hidden');
+      signupForm.classList.add('hidden');
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = 'index.html';
+      } catch (error) {
+        errorMsg.textContent = error.message;
+      }
+    });
+
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Save user data to Firestore
+        const user = userCredential.user;
+        await setDoc(doc(db, 'users', user.uid), {
+          email: user.email,
+          favorites: [],
+        });
+        window.location.href = 'index.html';
+      } catch (error) {
+        signupErrorMsg.textContent = error.message;
+      }
+    });
+
+    
+  </script>
+
+  <script>
+    const usernameInput = document.getElementById('login-username');
+    const emailInput = document.getElementById('email');
+
+    usernameInput.addEventListener('input', function () {
+    emailInput.value = usernameInput.value + '@example.com';
+    });
+  </script>
+
+</body>
+</html>

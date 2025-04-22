@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fusion Motors | Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #1f2937; /* Tailwind gray-800 */
+    }
+    .hero {
+      background-image: url('002c67fb-7621-4b5a-ac52-70002554e973.png');
+      background-size: cover;
+      background-position: center;
+    }
+  </style>
+</head>
+<body class="text-white font-sans">
+  <!-- Nav Bar -->
+  <nav class="bg-gradient-to-r from-indigo-900 to-purple-800 p-6 flex justify-between items-center shadow-lg">
+    <h1 class="text-4xl font-bold tracking-wide">🚗 Fusion Motors</h1>
+    <div class="space-x-6 text-lg" id="nav-links">
+      <a href="index.html" class="text-yellow-300 font-semibold">Home</a>
+      <a href="search.html" class="hover:text-yellow-300 transition">Search</a>
+      <a href="favorites.html" class="hover:text-yellow-300 transition">Favorites</a>
+      <a href="compare.html" class="hover:text-yellow-300 transition">Compare</a>
+      <a href="login.html" class="hover:text-yellow-300 transition" id="login-link">Login</a>
+      <button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 text-sm font-semibold hidden">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero min-h-[80vh] flex items-center justify-center text-center mt-16 px-4">
+    <div class="bg-black bg-opacity-70 p-10 rounded-xl shadow-xl max-w-5xl w-full">
+      <h2 class="text-5xl font-extrabold mb-6">Drive Your Future Today</h2>
+      <p class="text-lg text-gray-300 mb-8">Explore top-rated cars, view specs and images, and start your journey with Fusion Motors.</p>
+      <a href="search.html">
+        <button class="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-lg font-semibold transition text-lg">Search Vehicles</button>
+      </a>
+    </div>
+  </section>
+
+  <!-- Spacer -->
+  <div class="h-20"></div>
+
+  <!-- Featured Section (Placeholder) -->
+  <section class="py-20 px-4 text-center bg-gray-900">
+    <h3 class="text-3xl font-bold mb-8">Featured Vehicles</h3>
+    <p class="text-gray-400">Live vehicle highlights will appear here soon with Firebase integration.</p>
+  </section>
+
+  <footer class="bg-gray-800 text-center p-4 text-sm text-gray-400">
+    © 2025 Fusion Motors. All rights reserved.
+  </footer>
+
+  <script type="module">
+    import { auth, onAuthStateChanged, signOut } from './firebase.js';
+
+    const loginLink = document.getElementById('login-link');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginLink.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+      } else {
+        loginLink.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => window.location.href = 'login.html');
+    });
+  </script>
+</body>
+</html>

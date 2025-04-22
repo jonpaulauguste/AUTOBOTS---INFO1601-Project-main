@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Car Details | Fusion Motors</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white font-sans">
+
+  <header class="bg-indigo-900 text-white p-6 text-center text-3xl font-bold shadow">
+    Fusion Motors - Car Details
+    <button id="logoutBtn" class="ml-4 px-4 py-2 bg-red-600 rounded hover:bg-red-700 float-right text-sm font-semibold">Logout</button>
+  </header>
+
+  <main class="max-w-4xl mx-auto mt-10 p-6 bg-gray-800 rounded-xl shadow space-y-6" id="carDetails">
+    <h2 class="text-2xl font-bold text-center">Loading car details...</h2>
+  </main>
+
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => window.location.href = 'login.html');
+      });
+    }
+
+    // Optional protection
+    // onAuthStateChanged(auth, user => {
+    //   if (!user) window.location.href = 'login.html';
+    // });
+
+    const carDetails = document.getElementById('carDetails');
+    const carData = JSON.parse(localStorage.getItem('selectedCar'));
+
+    if (!carData) {
+      carDetails.innerHTML = '<p class="text-red-400 text-center">No car selected.</p>';
+    } else {
+      carDetails.innerHTML = `
+        <h2 class="text-3xl font-bold text-center mb-6">${carData.year} ${carData.name}</h2>
+        <img src="https://via.placeholder.com/600x300?text=${encodeURIComponent(carData.name)}" alt="${carData.name}" class="w-full rounded-xl mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-lg">
+          <p><strong>Description:</strong> ${carData.description}</p>
+          <p><strong>MSRP:</strong> $${carData.msrp.toLocaleString()}</p>
+          <p><strong>Invoice:</strong> $${carData.invoice.toLocaleString()}</p>
+        </div>
+      `;
+    }
+  </script>
+
+</body>
+</html>

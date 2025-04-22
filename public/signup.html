@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up | Fusion Motors</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #1f2937; /* Same gray as the index page */
+    }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.85);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+<body class="text-white font-sans">
+  <!-- Nav Bar -->
+  <nav class="bg-gradient-to-r from-indigo-900 to-purple-800 text-white p-6 flex justify-between items-center shadow-lg">
+    <h1 class="text-4xl font-bold tracking-wide">🚗 Fusion Motors</h1>
+    <div class="space-x-6 text-lg" id="nav-links">
+      <a href="index.html" class="hover:text-yellow-300 transition">Home</a>
+      <a href="login.html" class="hover:text-yellow-300 transition" id="login-link">Login</a>
+    </div>
+  </nav>
+
+  <!-- Sign-Up Form -->
+  <main class="flex items-center justify-center min-h-screen">
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full">
+      <h2 class="text-3xl font-bold mb-6 text-center">Sign Up for Fusion Motors</h2>
+      <form id="signup-form" class="space-y-4">
+        <input type="email" id="email" placeholder="Email" class="w-full p-3 rounded text-black focus:outline-none" required>
+        <input type="password" id="password" placeholder="Password" class="w-full p-3 rounded text-black focus:outline-none" required>
+        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded font-semibold transition">Sign Up</button>
+        <p id="signup-error" class="text-red-400 text-sm text-center mt-2"></p>
+      </form>
+    </div>
+  </main>
+
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js';
+
+    const form = document.getElementById('signup-form');
+    const errorMsg = document.getElementById('signup-error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        // Create a new user in Firebase Authentication
+        await createUserWithEmailAndPassword(auth, email, password);
+        window.location.href = 'index.html'; // Redirect to home page after successful sign-up
+      } catch (error) {
+        errorMsg.textContent = error.message; // Display any errors
+      }
+    });
+  </script>
+</body>
+</html>

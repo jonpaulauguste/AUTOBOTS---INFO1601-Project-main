@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search for a Car | Fusion Motors</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #1f2937; }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.85);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    }
+    .loader {
+      border: 5px solid rgba(255, 255, 255, 0.2);
+      border-top: 5px solid #38bdf8;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .glass {
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 1rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="font-sans text-white">
+  <!-- Nav Bar -->
+  <nav class="bg-gradient-to-r from-indigo-900 to-purple-800 text-white p-6 flex justify-between items-center shadow-lg">
+    <h1 class="text-4xl font-bold tracking-wide">🚗 Fusion Motors</h1>
+    <div class="space-x-6 text-lg" id="nav-links">
+      <a href="index.html" class="hover:text-yellow-300 transition">Home</a>
+      <a href="favorites.html" class="hover:text-yellow-300 transition">Favorites</a>
+      <a href="login.html" class="hover:text-yellow-300 transition" id="login-link">Login</a>
+      <button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 text-sm font-semibold hidden">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Car Search Section -->
+  <main class="max-w-5xl mx-auto overlay mt-10 p-6">
+    <section class="mb-10">
+      <h2 class="text-2xl font-semibold mb-6 text-center">Search for a Car</h2>
+      <form id="car-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input type="text" id="make" placeholder="Car Make (e.g., Honda)" class="p-3 rounded text-black focus:outline-none" required>
+        <input type="text" id="model" placeholder="Car Model (e.g., Civic)" class="p-3 rounded text-black focus:outline-none" required>
+        <input type="number" id="year" placeholder="Year (optional)" class="p-3 rounded text-black focus:outline-none">
+        <button type="submit" class="col-span-1 md:col-span-3 bg-gradient-to-r from-yellow-400 to-orange-600 text-white py-3 rounded font-semibold hover:opacity-90 transition">Find My Car Info</button>
+      </form>
+    </section>
+
+    <!-- Loader -->
+    <div id="loader" class="loader hidden"></div>
+
+    <!-- Results Display -->
+    <section id="results" class="space-y-6"></section>
+  </main>
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js';
+    import { doc, setDoc, updateDoc, arrayUnion, getDoc } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js';
+  
+    const form = document.getElementById('car-form');
+    const resultsSection = document.getElementById('results');
+    const loader = document.getElementById('loader');
+    const loginLink = document.getElementById('login-link');
+    const logoutBtn = document.getElementById('logoutBtn');
+  
+    // Initialize favorites functionality
+    const setupFavorites = () => {
+      document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          
+          if (!auth.currentUser) {
+            alert('Please log in to add favorites.');
+            window.location.href = 'login.html';
+            return;
+          }
+  
+          const car = JSON.parse(btn.dataset.car);
+          const userRef = doc(db, "users", auth.currentUser.uid);
+          
+          try {
+            // 1. Check if user document exists
+            const userDoc = await getDoc(userRef);
+            
+            // 2. Create document if it doesn't exist
+            if (!userDoc.exists()) {
+              await setDoc(userRef, {
+                email: auth.currentUser.email,
+                favorites: [] // Initialize empty array
+              });
+            }
+  
+            // 3. Prepare favorite data
+            const favoriteData = {
+              make: car.make,
+              model: car.model,
+              year: car.year,
+              price: car.price,
+              imageUrl: car.imageUrl,
+              id: `${car.make}-${car.model}-${car.year}`,
+              timestamp: new Date().toISOString()
+            };
+  
+            // 4. Add to favorites array
+            await updateDoc(userRef, {
+              favorites: arrayUnion(favoriteData)
+            });
+  
+            // 5. Visual feedback
+            btn.innerHTML = '❤️ Added!';
+            btn.classList.add('bg-green-500', 'hover:bg-green-600');
+            btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+            btn.disabled = true;
+            
+            // 6. Log success
+            console.log('Favorite added:', favoriteData);
+            console.log('Full user document:', (await getDoc(userRef)).data());
+  
+          } catch (error) {
+            console.error('Full error details:', {
+              code: error.code,
+              message: error.message,
+              stack: error.stack
+            });
+            alert(`Failed to add favorite: ${error.message}`);
+          }
+        });
+      });
+    };
+  
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+  
+      const make = document.getElementById('make').value.trim();
+      const model = document.getElementById('model').value.trim();
+      const year = document.getElementById('year').value.trim();
+  
+      const carApiUrl = `https://api.api-ninjas.com/v1/cars?make=${make}&model=${model}${year ? `&year=${year}` : ''}`;
+      const imageApiUrl = `https://www.carimagery.com/api.asmx/GetImageUrl?searchTerm=${make}+${model}`;
+      const specsApiUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/getmodelsformake/${make}?format=json`;
+  
+      resultsSection.innerHTML = '';
+      loader.classList.remove('hidden');
+  
+      try {
+        const [carRes, specsRes, imageRes] = await Promise.all([
+          fetch(carApiUrl, { headers: { 'X-Api-Key': 'GiC0QdyXbeDCiaK4SvKecA==AY1P5ckuskydXgmZ' } }),
+          fetch(specsApiUrl),
+          fetch(imageApiUrl)
+        ]);
+  
+        const carData = await carRes.json();
+        const specsData = await specsRes.json();
+        const imageText = await imageRes.text();
+        const imageUrl = imageText.match(/<string xmlns="[^\"]+">(.*?)<\/string>/)?.[1] || '';
+  
+        loader.classList.add('hidden');
+  
+        if (carData.length === 0) {
+          resultsSection.innerHTML = '<p class="text-red-400 text-center">No results found. Please try another search.</p>';
+          return;
+        }
+  
+        resultsSection.innerHTML = carData.map(car => {
+          const price = Math.floor(Math.random() * (35000 - 5000 + 1)) + 5000;
+          const isUsed = Math.random() > 0.5 ? "Used" : "New";
+          const mileage = Math.floor(Math.random() * (200000 - 5000 + 1)) + 5000;
+  
+          return `
+            <div class="glass p-6 rounded shadow-lg">
+              <h3 class="text-2xl font-bold text-cyan-300 mb-4">${car.make} ${car.model} (${car.year})</h3>
+              <img src="${imageUrl}" alt="${car.make} ${car.model}" class="w-full max-w-md my-4 rounded-xl border border-gray-700 shadow"/>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <p><strong>Price:</strong> $${price.toLocaleString()}</p>
+                <p><strong>Status:</strong> ${isUsed}</p>
+                <p><strong>Mileage:</strong> ${mileage.toLocaleString()} miles</p>
+                <p><strong>Transmission:</strong> ${car.transmission}</p>
+                <p><strong>Fuel Type:</strong> ${car.fuel_type}</p>
+                <p><strong>Cylinders:</strong> ${car.cylinders}</p>
+                <p><strong>City MPG:</strong> ${car.city_mpg}</p>
+                <p><strong>Highway MPG:</strong> ${car.highway_mpg}</p>
+                <p><strong>Weight:</strong> ${car.weight_in_lbs} lbs</p>
+              </div>
+                <button class="favorite-btn bg-yellow-500 text-black px-4 py-2 mt-4 rounded hover:bg-yellow-600 hover:scale-105 transition" 
+                    onclick="addToFavorites('${car.make}', '${car.model}', '${car.year}', ${price}, '${imageUrl}')">
+                ♡ Add to Favorites
+                </button>
+            </div>
+          `;
+        }).join('');
+  
+        // Initialize favorites buttons after rendering
+        setupFavorites();
+
+        //function to add to favorites
+        window.addToFavorites = async (make, model, year, price, imageUrl) => {
+          if (!auth.currentUser) {
+            alert('Please log in to add favorites.');
+            window.location.href = 'login.html';
+            return;
+          }
+        
+
+          window.location.href = 'favorites.html';
+
+          const userRef = doc(db, "users", auth.currentUser.uid);
+          const favoriteData = {
+            make,
+            model,
+            year,
+            price,
+            imageUrl,
+            id: `${make}-${model}-${year}`,
+            timestamp: new Date().toISOString()
+          };
+        
+          try {
+            await updateDoc(userRef, {
+              favorites: arrayUnion(favoriteData)
+            });
+        
+            alert('Car added to favorites!');
+            // Redirect to favorites.html after adding
+            window.location.href = 'favorites.html';
+          } catch (error) {
+            console.error('Error adding to favorites:', error);
+          }
+        };
+        
+            } catch (error) {
+        loader.classList.add('hidden');
+        resultsSection.innerHTML = `<p class="text-red-400 text-center">Error: ${error.message}</p>`;
+            }
+          });
+   
+    // Auth state handling
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginLink.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+      } else {
+        loginLink.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+      }
+    });
+  
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => window.location.href = 'login.html');
+    });
+  </script>
+</body>
+</html>
